@@ -40,7 +40,7 @@ def parse_args():
 
     # Model arguments
     parser.add_argument('-l', '--num_layers', default=4, type=int, metavar='N', help='num of residual layers')
-    parser.add_argument('-h', '--hid_dim', default=128, type=int, metavar='N', help='num of hidden dimensions')
+    parser.add_argument('-z', '--hid_dim', default=128, type=int, metavar='N', help='num of hidden dimensions')
     parser.add_argument('-b', '--batch_size', default=64, type=int, metavar='N',
                         help='batch size in terms of predicted frames')
     parser.add_argument('-e', '--epochs', default=100, type=int, metavar='N', help='number of training epochs')

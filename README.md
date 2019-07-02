@@ -79,13 +79,13 @@ python main_linear.py
 
 For SemGCN without non-local blocks:
 ```
-python main_gcn.py --epoch 50
+python main_gcn.py --epochs 50
 ```
 By default the application runs in training mode. This will train a new model for 50 epochs without non-local blocks, using ground truth 2D detections. You may change the value of `num_layers` (4 by default) and `hid_dim` (128 by default) if you want to try different network settings. Please refer to [`main_gcn.py`](main_gcn.py) for more details.
 
 For SemGCN with non-local blocks:
 ```
-python main_gcn.py --non_local --epoch 30
+python main_gcn.py --non_local --epochs 30
 ```
 This will train a new model with non-local blocks for 30 epochs, using ground truth 2D detections.
 
