@@ -58,15 +58,15 @@ class _GraphNonLocal(nn.Module):
 
 
 class SemGCN(nn.Module):
-    def __init__(self, adj, hid_dim, coords_dim=(2, 3), num_layers=4, nodes_group=None):
+    def __init__(self, adj, hid_dim, coords_dim=(2, 3), num_layers=4, nodes_group=None, p_dropout=None):
         super(SemGCN, self).__init__()
 
-        _gconv_input = [_GraphConv(adj, coords_dim[0], hid_dim, p_dropout=None)]
+        _gconv_input = [_GraphConv(adj, coords_dim[0], hid_dim, p_dropout=p_dropout)]
         _gconv_layers = []
 
         if nodes_group is None:
             for i in range(num_layers):
-                _gconv_layers.append(_ResGraphConv(adj, hid_dim, hid_dim, hid_dim, p_dropout=None))
+                _gconv_layers.append(_ResGraphConv(adj, hid_dim, hid_dim, hid_dim, p_dropout=p_dropout))
         else:
             group_size = len(nodes_group[0])
             assert group_size > 1
@@ -81,7 +81,7 @@ class SemGCN(nn.Module):
 
             _gconv_input.append(_GraphNonLocal(hid_dim, grouped_order, restored_order, group_size))
             for i in range(num_layers):
-                _gconv_layers.append(_ResGraphConv(adj, hid_dim, hid_dim, hid_dim, p_dropout=None))
+                _gconv_layers.append(_ResGraphConv(adj, hid_dim, hid_dim, hid_dim, p_dropout=p_dropout))
                 _gconv_layers.append(_GraphNonLocal(hid_dim, grouped_order, restored_order, group_size))
 
         self.gconv_input = nn.Sequential(*_gconv_input)

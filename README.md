@@ -12,23 +12,27 @@ This repository holds the Pytorch implementation of [Semantic Graph Convolutiona
 }
 ```
 
+<p align="center"><img src="example.gif" width="70%" alt="" /></p>
+
 ## Introduction
 
-We propose Semantic Graph Convolutional Networks (SemGCN), a novel graph convolutional network architecture that operates on regression tasks with graph-structured data. The code for training and evaluating our approach for 3D human pose estimation on the [Human3.6M Dataset](http://vision.imar.ro/human3.6m/) is provided in this repository.
+We propose Semantic Graph Convolutional Networks (SemGCN), a novel graph convolutional network architecture that operates on regression tasks with graph-structured data. The code of training and evaluating our approach for 3D human pose estimation on the [Human3.6M Dataset](http://vision.imar.ro/human3.6m/) is provided in this repository.
 
-In this repository, 3D human poses are predicted according to **Configuration #1** in [our paper](https://arxiv.org/pdf/1904.03345.pdf): we only leverage 2D joints of the human pose as inputs. We utilize the method described in Pavllo et al. [2] to normalize 2D and 3D poses in the dataset, which is different from the original implementation in our paper. To be specific, 2D poses are scaled according to the image resolution and normalized to [-1, 1]; 3D poses are aligned with respect to the root joint . Please refer to the corresponding part in Pavllo et al. [2] for more details. We predict 17 joints as Martinez et al. [1]. We also provide the results of Martinez et al. [1] in the same setting for comparison.
+In this repository, 3D human poses are predicted according to **Configuration #1** in [our paper](https://arxiv.org/pdf/1904.03345.pdf): we only leverage 2D joints of the human pose as inputs. We utilize the method described in Pavllo et al. [2] to normalize 2D and 3D poses in the dataset, which is different from the original implementation in our paper. To be specific, 2D poses are scaled according to the image resolution and normalized to [-1, 1]; 3D poses are aligned with respect to the root joint . Please refer to the corresponding part in Pavllo et al. [2] for more details. We predict 16 joints (as the skeleton in Martinez et al. [1] without the 'Neck/Nose' joint). We also provide the results of Martinez et al. [1] in the same setting for comparison.
 
 ### Results on Human3.6M
 
 Under Protocol 1 (mean per-joint position error) and Protocol 2 (mean per-joint position error after rigid alignment).
 
 | Method | 2D Detections | # of Epochs | # of Parameters | MPJPE (P1) | P-MPJPE (P2) |
-|:-------|:-------|:-------:|:-------:|:-------:|:-------:|
-| Martinez et al. [1] | Ground truth | 200  | 4.29M | 44.17 mm | 34.35 mm |
-| SemGCN | Ground truth | 50 | 0.27M | 41.16 mm | 31.57 mm |
-| SemGCN (w/ Non-local) | Ground truth | 30 | 0.43M | **39.87 mm** | **30.16 mm** |
+|:-------|:-------:|:-------:|:-------:|:-------:|:-------:|
+| Martinez et al. [1] | Ground truth | 200  | 4.29M | 44.40 mm | 35.25 mm |
+| SemGCN | Ground truth | 50 | 0.27M | 42.14 mm | 33.53 mm |
+| SemGCN (w/ Non-local) | Ground truth | 30 | 0.43M | **40.78 mm** | **31.46 mm** |
+| Martinez et al. [1] | SH (fine-tuned) | 200  | 4.29M | 63.48 mm | 48.15 mm |
+| SemGCN (w/ Non-local) | SH (fine-tuned) | 100 | 0.43M | **61.24 mm** | **47.71 mm** |
 
-More results using different 2D detections will be added in the incoming updates.
+Results using two different 2D detections (Ground truth and Stacked Hourglass detections fine-tuned on Human3.6M) are reported.
 
 ### References
 
@@ -47,7 +51,7 @@ pip install -r requirements.txt
 ```
 
 ### Dataset setup
-You can find the instructions for setting up the Human3.6M in [`data/README.md`](data/README.md). For this short guide, we focus on Human3.6M. The code for data preparation is borrowed from [VideoPose3D](https://github.com/facebookresearch/VideoPose3D).
+You can find the instructions for setting up the Human3.6M and results of 2D detections in [`data/README.md`](data/README.md). The code for data preparation is borrowed from [VideoPose3D](https://github.com/facebookresearch/VideoPose3D).
 
 ### Evaluating our pretrained models
 The pretrained models can be downloaded from [Google Drive](https://drive.google.com/drive/folders/1c7Iz6Tt7qbaw0c1snKgcGOD-JGSzuZ4X?usp=sharing). Put `checkpoint` in the project root directory.
@@ -55,6 +59,7 @@ The pretrained models can be downloaded from [Google Drive](https://drive.google
 To evaluate Martinez et al. [1], run:
 ```
 python main_linear.py --evaluate checkpoint/pretrained/ckpt_linear.pth.tar
+python main_linear.py --evaluate checkpoint/pretrained/ckpt_linear_sh.pth.tar --keypoints sh_ft_h36m
 ```
 
 To evaluate SemGCN without non-local blocks, run:
@@ -65,6 +70,7 @@ python main_gcn.py --evaluate checkpoint/pretrained/ckpt_semgcn.pth.tar
 To evaluate SemGCN with non-local blocks, run:
 ```
 python main_gcn.py --non_local --evaluate checkpoint/pretrained/ckpt_semgcn_nonlocal.pth.tar
+python main_gcn.py --non_local --evaluate checkpoint/pretrained/ckpt_semgcn_nonlocal_sh.pth.tar --keypoints sh_ft_h36m
 ```
 
 Note that the error is calculated in an **action-wise** manner.
@@ -88,6 +94,20 @@ For SemGCN with non-local blocks:
 python main_gcn.py --non_local --epochs 30
 ```
 This will train a new model with non-local blocks for 30 epochs, using ground truth 2D detections.
+
+For training and evaluating models using 2D detections generated by Stacked Hourglass, add `--keypoints sh_ft_h36m` to the commands:
+```
+python main_gcn.py --non_local --epochs 100 --keypoints sh_ft_h36m
+python main_gcn.py --non_local --evaluate ${CHECKPOINT_PATH} --keypoints sh_ft_h36m
+```
+
+### Visualization
+
+You can generate visualizations of the model predictions by running:
+```
+python viz.py --architecture gcn --non_local --evaluate checkpoint/pretrained/ckpt_semgcn_nonlocal.pth.tar --viz_subject S11 --viz_action Walking --viz_camera 0 --viz_output output.gif --viz_size 3 --viz_downsample 2 --viz_limit 60
+```
+The script can also export MP4 videos, and supports a variety of parameters (e.g. downsampling/FPS, size, bitrate). See [`viz.py`](viz.py) for more details.
 
 ## Acknowledgement
 

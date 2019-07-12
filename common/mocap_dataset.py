@@ -2,8 +2,9 @@ from __future__ import absolute_import
 
 
 class MocapDataset(object):
-    def __init__(self, skeleton):
+    def __init__(self, skeleton, fps=None):
         self._skeleton = skeleton
+        self._fps = fps
         self._data = None  # Must be filled by subclass
         self._cameras = None  # Must be filled by subclass
 
@@ -19,6 +20,9 @@ class MocapDataset(object):
 
     def subjects(self):
         return self._data.keys()
+
+    def fps(self):
+        return self._fps
 
     def skeleton(self):
         return self._skeleton

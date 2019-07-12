@@ -32,3 +32,24 @@ cd data
 python prepare_data_h36m.py --from-source /path/to/dataset/pose
 cd ..
 ```
+
+## 2D detections for Human3.6M
+We provide support for the following 2D detections:
+
+- `gt`: ground-truth 2D poses, extracted through the camera projection parameters.
+- `sh_pt_mpii`: Stacked Hourglass detections, pretrained on MPII.
+- `sh_ft_h36m`: Stacked Hourglass detections, fine-tuned on Human3.6M.
+
+The 2D detection source is specified through the `--keypoints` parameter, which loads the file `data_2d_${DATASET}_${DETECTION}.npz` from the `data` directory, where `DATASET` is the dataset name (e.g., `h36m`) and `DETECTION` is the 2D detection source (e.g., `sh_pt_mpii`). Since all the files are encoded according to the same format, it is trivial to create a custom set of 2D detections.
+
+Ground-truth poses (`gt`) have already been extracted by the previous step. The other detections must be downloaded manually (see instructions below). You only need to download the detections you want to use.
+
+### Stacked Hourglass detections
+These detections (both pretrained and fine-tuned) are provided by [Martinez et al.](https://github.com/una-dinosauria/3d-pose-baseline) in their repository on 3D human pose estimation. The 2D poses produced by the pretrained model are in the same archive as the dataset ([h36m.zip](https://www.dropbox.com/s/e35qv3n6zlkouki/h36m.zip)). The fine-tuned poses can be downloaded [here](https://drive.google.com/open?id=0BxWzojlLp259S2FuUXJ6aUNxZkE). Put the two archives in the `data` directory and run:
+
+```sh
+cd data
+python prepare_data_2d_h36m_sh.py -pt h36m.zip
+python prepare_data_2d_h36m_sh.py -ft stacked_hourglass_fined_tuned_240.tar.gz
+cd ..
+```

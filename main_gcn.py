@@ -50,8 +50,9 @@ def parse_args():
     parser.add_argument('--lr_gamma', type=float, default=0.96, help='gamma of learning rate decay')
     parser.add_argument('--no_max', dest='max_norm', action='store_false', help='if use max_norm clip on grad')
     parser.set_defaults(max_norm=True)
-    parser.add_argument('--non_local', dest='non_local', action='store_true', help='if use non local layers')
+    parser.add_argument('--non_local', dest='non_local', action='store_true', help='if use non-local layers')
     parser.set_defaults(non_local=False)
+    parser.add_argument('--dropout', default=0.0, type=float, help='dropout rate')
 
     # Experimental
     parser.add_argument('--downsample', default=1, type=int, metavar='FACTOR', help='downsample frame rate by factor')
@@ -97,8 +98,9 @@ def main(args):
     # Create model
     print("==> Creating model...")
 
+    p_dropout = (None if args.dropout == 0.0 else args.dropout)
     adj = adj_mx_from_skeleton(dataset.skeleton())
-    model_pos = SemGCN(adj, args.hid_dim, num_layers=args.num_layers,
+    model_pos = SemGCN(adj, args.hid_dim, num_layers=args.num_layers, p_dropout=p_dropout,
                        nodes_group=dataset.skeleton().joints_group() if args.non_local else None).to(device)
     print("==> Total parameters: {:.2f}M".format(sum(p.numel() for p in model_pos.parameters()) / 1000000.0))
 
@@ -107,10 +109,10 @@ def main(args):
 
     # Optionally resume from a checkpoint
     if args.resume or args.evaluate:
-        ckpt_path = path.join(args.resume if args.resume else args.evaluate)
+        ckpt_path = (args.resume if args.resume else args.evaluate)
 
         if path.isfile(ckpt_path):
-            print("=> Loading checkpoint '{}'".format(ckpt_path))
+            print("==> Loading checkpoint '{}'".format(ckpt_path))
             ckpt = torch.load(ckpt_path)
             start_epoch = ckpt['epoch']
             error_best = ckpt['error']
@@ -118,13 +120,13 @@ def main(args):
             lr_now = ckpt['lr']
             model_pos.load_state_dict(ckpt['state_dict'])
             optimizer.load_state_dict(ckpt['optimizer'])
-            print("=> Loaded checkpoint (Epoch: {} | Error: {})".format(start_epoch, error_best))
+            print("==> Loaded checkpoint (Epoch: {} | Error: {})".format(start_epoch, error_best))
 
             if args.resume:
                 ckpt_dir_path = path.dirname(ckpt_path)
                 logger = Logger(path.join(ckpt_dir_path, 'log.txt'), resume=True)
         else:
-            raise RuntimeError("=> No checkpoint found at '{}'".format(ckpt_path))
+            raise RuntimeError("==> No checkpoint found at '{}'".format(ckpt_path))
     else:
         start_epoch = 0
         error_best = None
@@ -134,7 +136,7 @@ def main(args):
 
         if not path.exists(ckpt_dir_path):
             os.makedirs(ckpt_dir_path)
-            print('=> Making checkpoint dir: {}'.format(ckpt_dir_path))
+            print('==> Making checkpoint dir: {}'.format(ckpt_dir_path))
 
         logger = Logger(os.path.join(ckpt_dir_path, 'log.txt'))
         logger.set_names(['epoch', 'lr', 'loss_train', 'error_eval_p1', 'error_eval_p2'])

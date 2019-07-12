@@ -9,9 +9,9 @@ from common.camera import normalize_screen_coordinates
 h36m_skeleton = Skeleton(parents=[-1, 0, 1, 2, 3, 4, 0, 6, 7, 8, 9, 0, 11, 12, 13, 14, 12,
                                   16, 17, 18, 19, 20, 19, 22, 12, 24, 25, 26, 27, 28, 27, 30],
                          joints_left=[6, 7, 8, 9, 10, 16, 17, 18, 19, 20, 21, 22, 23],
-                         joints_right=[1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29, 30, 31],
-                         # joints_group=[(1, 2, 3), (4, 5, 6), (0, 7, 8), (14, 15, 16), (11, 12, 13), (9, 10)])
-                         joints_group=[[2, 3], [5, 6], [1, 4], [0, 7], [8, 9], [15, 16], [12, 13], [11, 14], [10]])
+                         joints_right=[1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29, 30, 31])
+
+h36m_skeleton_joints_group = [[2, 3], [5, 6], [1, 4], [0, 7], [8, 9], [14, 15], [11, 12], [10, 13]]
 
 # Joints in H3.6M -- data has 32 joints, but only 17 that move; these are the indices.
 H36M_NAMES = [''] * 32
@@ -230,7 +230,7 @@ h36m_cameras_extrinsic_params = {
 
 class Human36mDataset(MocapDataset):
     def __init__(self, path, remove_static_joints=True):
-        super(Human36mDataset, self).__init__(skeleton=h36m_skeleton)
+        super(Human36mDataset, self).__init__(skeleton=h36m_skeleton, fps=50)
 
         self._cameras = copy.deepcopy(h36m_cameras_extrinsic_params)
         for cameras in self._cameras.values():
@@ -266,16 +266,19 @@ class Human36mDataset(MocapDataset):
                 }
 
         if remove_static_joints:
-            # Bring the skeleton to 17 joints instead of the original 32
+            # Bring the skeleton to 16 joints instead of the original 32
             joints = []
             for i, x in enumerate(H36M_NAMES):
-                if x == '':
+                if x == '' or x == 'Neck/Nose':  # Remove 'Nose' to make SH and H36M 2D poses have the same dimension
                     joints.append(i)
             self.remove_joints(joints)
 
             # Rewire shoulders to the correct parents
-            self._skeleton._parents[11] = 8
-            self._skeleton._parents[14] = 8
+            self._skeleton._parents[10] = 8
+            self._skeleton._parents[13] = 8
+
+            # Set joints group
+            self._skeleton._joints_group = h36m_skeleton_joints_group
 
     def define_actions(self, action=None):
         all_actions = ["Directions",

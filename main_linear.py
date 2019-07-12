@@ -89,10 +89,10 @@ def main(args):
     cudnn.benchmark = True
     device = torch.device("cuda")
 
-    # Ccreate model
+    # Create model
     print("==> Creating model...")
-    num_joints = dataset.skeleton().num_joints() - 1
-    model_pos = LinearModel(num_joints * 2, num_joints * 3).to(device)
+    num_joints = dataset.skeleton().num_joints()
+    model_pos = LinearModel(num_joints * 2, (num_joints - 1) * 3).to(device)
     model_pos.apply(init_weights)
     print("==> Total parameters: {:.2f}M".format(sum(p.numel() for p in model_pos.parameters()) / 1000000.0))
 
@@ -101,10 +101,10 @@ def main(args):
 
     # Optionally resume from a checkpoint
     if args.resume or args.evaluate:
-        ckpt_path = path.join(args.resume if args.resume else args.evaluate)
+        ckpt_path = (args.resume if args.resume else args.evaluate)
 
         if path.isfile(ckpt_path):
-            print("=> Loading checkpoint '{}'".format(ckpt_path))
+            print("==> Loading checkpoint '{}'".format(ckpt_path))
             ckpt = torch.load(ckpt_path)
             start_epoch = ckpt['epoch']
             error_best = ckpt['error']
@@ -112,13 +112,13 @@ def main(args):
             lr_now = ckpt['lr']
             model_pos.load_state_dict(ckpt['state_dict'])
             optimizer.load_state_dict(ckpt['optimizer'])
-            print("=> Loaded checkpoint (Epoch: {} | Error: {})".format(start_epoch, error_best))
+            print("==> Loaded checkpoint (Epoch: {} | Error: {})".format(start_epoch, error_best))
 
             if args.resume:
                 ckpt_dir_path = path.dirname(ckpt_path)
                 logger = Logger(path.join(ckpt_dir_path, 'log.txt'), resume=True)
         else:
-            raise RuntimeError("=> No checkpoint found at '{}'".format(ckpt_path))
+            raise RuntimeError("==> No checkpoint found at '{}'".format(ckpt_path))
     else:
         start_epoch = 0
         error_best = None
@@ -128,7 +128,7 @@ def main(args):
 
         if not path.exists(ckpt_dir_path):
             os.makedirs(ckpt_dir_path)
-            print('=> Making checkpoint dir: {}'.format(ckpt_dir_path))
+            print('==> Making checkpoint dir: {}'.format(ckpt_dir_path))
 
         logger = Logger(os.path.join(ckpt_dir_path, 'log.txt'))
         logger.set_names(['epoch', 'lr', 'loss_train', 'error_eval_p1', 'error_eval_p2'])
@@ -211,8 +211,8 @@ def train(data_loader, model_pos, criterion, optimizer, device, lr_init, lr_now,
         if step % decay == 0 or step == 1:
             lr_now = lr_decay(optimizer, step, lr_init, decay, gamma)
 
-        targets_3d, inputs_2d = targets_3d[:, 1:, :].to(device), inputs_2d[:, 1:, :].to(device)  # Remove hip joint
-        outputs_3d = model_pos(inputs_2d.view(num_poses, -1)).view(num_poses, inputs_2d.size(1), -1)
+        targets_3d, inputs_2d = targets_3d[:, 1:, :].to(device), inputs_2d.to(device)  # Remove hip joint for 3D poses
+        outputs_3d = model_pos(inputs_2d.view(num_poses, -1)).view(num_poses, -1, 3)
 
         optimizer.zero_grad()
         loss_3d_pos = criterion(outputs_3d, targets_3d)
@@ -254,8 +254,8 @@ def evaluate(data_loader, model_pos, device):
         data_time.update(time.time() - end)
         num_poses = targets_3d.size(0)
 
-        inputs_2d = inputs_2d[:, 1:, :].to(device)  # Remove hip joint
-        outputs_3d = model_pos(inputs_2d.view(num_poses, -1)).view(num_poses, inputs_2d.size(1), -1).cpu()
+        inputs_2d = inputs_2d.to(device)
+        outputs_3d = model_pos(inputs_2d.view(num_poses, -1)).view(num_poses, -1, 3).cpu()
         outputs_3d = torch.cat([torch.zeros(num_poses, 1, outputs_3d.size(2)), outputs_3d], 1)  # Pad hip joint (0,0,0)
 
         epoch_loss_3d_pos.update(mpjpe(outputs_3d, targets_3d).item() * 1000.0, num_poses)
