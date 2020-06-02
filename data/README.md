@@ -13,6 +13,8 @@ python prepare_data_h36m.py --from-archive h36m.zip
 cd ..
 ```
 
+If the Dropbox link does not work, please download the dataset from [Google Drive](https://drive.google.com/drive/folders/1c7Iz6Tt7qbaw0c1snKgcGOD-JGSzuZ4X?usp=sharing).
+
 ### Setup from original source
 Alternatively, you can download the dataset from the [Human3.6m website](http://vision.imar.ro/human3.6m/) and convert it from its original format. This is useful if the other link goes down, or if you want to be sure to use the original source. MATLAB is required for this step.
 
