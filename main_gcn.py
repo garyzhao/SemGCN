@@ -237,7 +237,7 @@ def train(data_loader, model_pos, criterion, optimizer, device, lr_init, lr_now,
 
         bar.suffix = '({batch}/{size}) Data: {data:.6f}s | Batch: {bt:.3f}s | Total: {ttl:} | ETA: {eta:} ' \
                      '| Loss: {loss: .4f}' \
-            .format(batch=i + 1, size=len(data_loader), data=data_time.val, bt=batch_time.avg,
+            .format(batch=i + 1, size=len(data_loader), data=data_time.avg, bt=batch_time.avg,
                     ttl=bar.elapsed_td, eta=bar.eta_td, loss=epoch_loss_3d_pos.avg)
         bar.next()
 
@@ -275,7 +275,7 @@ def evaluate(data_loader, model_pos, device):
 
         bar.suffix = '({batch}/{size}) Data: {data:.6f}s | Batch: {bt:.3f}s | Total: {ttl:} | ETA: {eta:} ' \
                      '| MPJPE: {e1: .4f} | P-MPJPE: {e2: .4f}' \
-            .format(batch=i + 1, size=len(data_loader), data=data_time.val, bt=batch_time.avg,
+            .format(batch=i + 1, size=len(data_loader), data=data_time.avg, bt=batch_time.avg,
                     ttl=bar.elapsed_td, eta=bar.eta_td, e1=epoch_loss_3d_pos.avg, e2=epoch_loss_3d_pos_procrustes.avg)
         bar.next()
 
